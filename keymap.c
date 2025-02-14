@@ -1,4 +1,6 @@
 #include QMK_KEYBOARD_H
+#include <stdio.h>
+#include "timer.h"
 
 // Definir el tap dance
 enum {
@@ -131,28 +133,45 @@ const char *read_keylogs(void);
 // void set_timelog(void);
 // const char *read_timelog(void);
 
+// Añadir después de las definiciones de layers
+static uint32_t startup_timer = 0;
+static char time_str[8];      // Reducido de 10 a 8 para optimizar
+static uint32_t keypress_counter = 0;
+static char counter_str[8];   // Reducido de 12 a 8
+
+void update_time_str(void) {
+    uint32_t current = timer_read32() / 1000;
+    if (!startup_timer) startup_timer = current;
+    current -= startup_timer;
+    
+    uint8_t h = (current / 3600) % 24;
+    uint8_t m = (current / 60) % 60;
+    uint8_t s = current % 60;
+    
+    snprintf(time_str, sizeof(time_str), "T: %02d:%02d:%02d", h, m, s);
+    snprintf(counter_str, sizeof(counter_str), "K >> %03lu", keypress_counter);
+}
+
 bool oled_task_user(void) {
-  if (is_keyboard_master()) {
-    // If you want to change the display of OLED, you need to change here
-    oled_write_ln(read_layer_state(), false);
-    oled_write_ln(read_keylog(), false);
-    oled_write_ln(read_keylogs(), false);
-    //oled_write_ln(read_mode_icon(keymap_config.swap_lalt_lgui), false);
-    //oled_write_ln(read_host_led_state(), false);
-    //oled_write_ln(read_timelog(), false);
-  } else {
-    oled_write(read_logo(), false);
-  }
+    if (is_keyboard_master()) {
+        oled_write_ln(read_layer_state(), false);
+        update_time_str();
+        oled_write_ln(time_str, false);
+        oled_write_ln(counter_str, false);
+        oled_write_ln(read_keylog(), false);
+    } else {
+        oled_write(read_logo(), false);
+    }
     return false;
 }
 #endif // OLED_ENABLE
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (record->event.pressed) {
+    if (record->event.pressed) {
+        keypress_counter++;
 #ifdef OLED_ENABLE
-    set_keylog(keycode, record);
+        set_keylog(keycode, record);
 #endif
-    // set_timelog();
-  }
-  return true;
+    }
+    return true;
 }
