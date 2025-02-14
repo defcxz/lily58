@@ -135,9 +135,9 @@ const char *read_keylogs(void);
 
 // Añadir después de las definiciones de layers
 static uint32_t startup_timer = 0;
-static char time_str[8];      // Reducido de 10 a 8 para optimizar
+static char time_str[16];      // Aumentado para asegurar espacio suficiente
 static uint32_t keypress_counter = 0;
-static char counter_str[8];   // Reducido de 12 a 8
+static char counter_str[12];   // Aumentado para asegurar espacio suficiente
 
 void update_time_str(void) {
     uint32_t current = timer_read32() / 1000;
@@ -148,8 +148,8 @@ void update_time_str(void) {
     uint8_t m = (current / 60) % 60;
     uint8_t s = current % 60;
     
-    snprintf(time_str, sizeof(time_str), "T: %02d:%02d:%02d", h, m, s);
-    snprintf(counter_str, sizeof(counter_str), "K >> %03lu", keypress_counter);
+    snprintf(time_str, sizeof(time_str), "T: %02u:%02u:%02u", h, m, s);
+    snprintf(counter_str, sizeof(counter_str), "K >> %04lu", keypress_counter);
 }
 
 bool oled_task_user(void) {
